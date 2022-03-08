@@ -1,14 +1,17 @@
 import os
+from re import sub
 from time import sleep
-from pip import main
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import ActionChains
+from bs4 import BeautifulSoup
+
 
 PATH_DRIVER = r'C:\WebCrawling\drivers'
 
+
 class Shopper(webdriver.Chrome):
-    def __init__(self, path_driver=PATH_DRIVER,teardown=False):
+    def __init__(self, path_driver=PATH_DRIVER, teardown=False):
         self.path = path_driver
         self.teardown = teardown
         os.environ['PATH'] += self.path
@@ -26,7 +29,7 @@ class Shopper(webdriver.Chrome):
         self.get(BASE_URL)
 
     def login(self, email, password):
-        print('Efetuando Login...') 
+        print('Efetuando Login...')
         entrar = self.find_element(By.XPATH, '//*[@id="benefits"]/div/div[1]/button')
         entrar.click()
         sleep(2)
@@ -44,70 +47,50 @@ class Shopper(webdriver.Chrome):
         print('Você está logado!')
 
     def choice_departaments(self):
-        self.get('https://programada.shopper.com.br/shop/alimentos')
-        print('Acessando o departamento...')
         subcategorys = self.find_elements(By.XPATH, "//*[@class='department-name']")
         print('Categorias encontradas no departamento: ')
         for category in subcategorys:
             print('Category: ', category.text)
 
-    def get_subcategorys(self):
-        links_categorys = self.find_elements(By.XPATH, "//*[@id='product_category']//a")
-        for category in links_categorys:
-           self.url_category.append(category.get_attribute('href'))
-        return self.url_category
+    def set_category_products(self):
+        category = self.find_element(By.XPATH, "//*[@department='alimentos']")  # Alimentos
+        sleep(2)
+        action = ActionChains(self)
+        action.move_to_element(category).perform()
+        sleep(2)
+        category_set = self.find_element(By.XPATH, "//*[@department='alimentos']//a[text()='Todos']")
+        sleep(2)
+        category_set.click()
+
+    def set_sub_category(self):
+        subcategory = self.find_element(By.XPATH, "//*[@class='sc-epFoly gVIHAp']")
+        subcategory.click()
+        
 
     def get_products(self):
-        print('Listando os produtos por categoria...')
-        sleep(2)
-        print('Listando os imagens dos produtos...')
-        list_products = []
-        #for products in self.url_category:
-            
-        self.get('https://programada.shopper.com.br/shop/alimentos/acucar-e-adocantes')
+        print('-'*20)
+        products = self.find_element(By.XPATH, "//*[@class='sc-fDZUdJ keuats']")
+        content_html = products.get_attribute('outerHTML') 
+        soup = BeautifulSoup(content_html, 'html.parser')
+        list_products = soup.find('p', class_='sc-kHdrYz dUFjAH').text()
+        print(list_products)
+        img = soup.find('img', class_='sc-ckRZPU epfYFx').get('href')
+        print(img)
+        #for p in list_products:
+        #    print(p.get_text())
+        #print(soup.prettify())
 
-        name_product = self.find_elements(By.XPATH, "//*[@class='sc-kHdrYz dUFjAH']")
-        for name in name_product:
-            list_products.append(name.text)
-        
-        price = self.find_elements(By.XPATH, "//*[@class='priceP']")
-        for p in price:
-            list_products.append(p.text)
 
-        economy = self.find_elements(By.XPATH, "//*[@class='economyP']")
-        for eco in economy:
-            list_products.append(eco.text)
-                
-   
-            #products = self.find_elements(By.XPATH, "//*[@class='sc-jcEtbA fZdjSL']")
-            #for prod in products:
-            #   list_products.append(prod.text)
 
-        imagens = self.find_elements(By.XPATH, "//*[@class='sc-ckRZPU epfYFx']")
-        for img in imagens:
-            list_products.append([img.get_attribute('src')])
-        #print('Lista Criada', list_products)
 
-        self.produtcs_of_category.append(list_products)
-        print(self.produtcs_of_category)
 
-    # def get_qtd_inventory(self):
-    #     print('Listando quantidades em estoque...')
-    #     details = self.find_element(By.XPATH, "//*[@class='sc-PZsNp fsKnKO']")  # detail item
-    #     details.click()
-    #     sleep(2)
-    #     add_item = self.find_element(By.XPATH, "//*[@class='sc-fivaXQ kAhNMO']")  # add item
-    #     add_item.click()
-    #     sleep(3)
-    #     qtd_item = self.find_element(By.XPATH, "//*[@class='sc-kJpAUB cebXqI']")  # select_qtd_item
-    #     qtd_item.click()
-    #     sleep(2)
-    #     quantify = self.find_element(By.XPATH, "//*[@class='max-quantify']")
-    #     print('Estoque atual: ', quantify.text)
-    #     close_qtd = self.find_element(By.XPATH, "//*[@class='close-button']")
-    #     close_qtd.click()
-    #     close_prod = self.find_element(By.XPATH, "//*[@class='sc-hLVXRe kGEwxb']")
-        
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     ...
